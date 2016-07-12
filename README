@@ -4,12 +4,11 @@ Lingua::EN::AddressParse - extract components of a street address, presented as 
 
 SYNOPSIS
 
-
     use Lingua::EN::AddressParse;
 
     my %args =
     (
-      country     => 'Australia',
+      country     => 'US',
       auto_clean  => 1,
       force_case  => 1,
       abbreviate_subcountry => 0,
@@ -18,19 +17,35 @@ SYNOPSIS
     );
 
     my $address = Lingua::EN::AddressParse->new(%args);
-    $error = $address->parse(
-       "UNIT 2A 14-16 OLD SOUTH HEAD ST ST JOHNS WOOD NSW 2021 AUSTRALIA : HOLD MAIL");
+    $error = $address->parse("40 1/2 N OLD MASSACHUSETTS AVE APT 3B Washington Valley Washington 98100: HOLD MAIL");
+       
+    print $address->report;       
+       
+        Country address format  'US'
+        Address type            'suburban'
+        Non matching part       'HOLD MAIL '
+        Error                   '1'
+        Error descriptions      'non matching section : HOLD MAIL '
+        Warning                 '1'
+        Warning description     ''
+        Case all                '40 1/2 N Old Massachusetts Ave Apt 3B Washington Valley WA 98100'
+        COMPONENTS              ''
+        base_street_name        'Old Massachusetts'
+        post_code               '98100'
+        property_identifier     '40 1/2'
+        street_direction_prefix 'N'
+        street_name             'N Old Massachusetts'
+        street_type             'Ave'
+        sub_property_identifier '3B'
+        sub_property_type       'Apt'
+        subcountry              'WA'
+        suburb                  'Washington Valley'       
 
-    %my_address = $address->components;
-    print $my_address{sub_property_identifier}; # UNIT 2A
-    print $my_address{property_identifier};     # 14-16
-
-    print $my_address{suburb};                  # ST JOHNS WOOD
-
-    %my_formatted_address = $address->components;
-    print $my_formatted_address{street_name};        # Old South Head
-    print $my_formatted_address{street_type};   # St
-
+    %address_components = $address->components;
+    print $address_components{sub_property_type};       # APT
+    print $address_components{sub_property_identifier}; # 3B
+    print $address_components{property_identifier};     # 40 1/2
+   
     %address_properties = $address->properties;
     print $address_properties{type};            # suburban
     print $address_properties{non_matching};    # : HOLD MAIL
@@ -38,15 +53,10 @@ SYNOPSIS
     $correct_casing = $address->case_all;
 
 
-DESCRIPTION
+=head1 DESCRIPTION
 
 This module takes as input a suburban, rural or postal address in free format
 text such as,
-
-    2A LOW ST KEW NSW 2123
-    12/3-5 AUBREY ST MOUNT VICTORIA VICTORIA 3133
-    "OLD REGRET" WENTWORTH FALLS NSW 2782 AUSTRALIA
-    GPO Box K318, HAYMARKET, NSW 2000
 
     3080 28TH AVE N ST PETERSBURG, FL 33713-3810
     12 1st Avenue N Suite # 2 Somewhere CA 12345 USA
@@ -55,6 +65,12 @@ text such as,
     9 Church Street, Abertillery, Mid Glamorgan NP13 1DA
     27 Bury Street, Abingdon, Oxfordshire OX14 3QT
 
+    2A LOW ST KEW NSW 2123
+    12/3-5 AUBREY ST MOUNT VICTORIA VICTORIA 3133
+    "OLD REGRET" WENTWORTH FALLS NSW 2782 AUSTRALIA
+    GPO Box K318, HAYMARKET, NSW 2000
+
+ 
 and attempts to parse it. If successful, the address is broken
 down into it's components and useful functions can be performed such as :
 
@@ -68,8 +84,7 @@ of bad characters, or extracting any portion that was parsed and the portion
 that failed.
 
 This module can be used for analysing and improving the quality of
-lists of postal addresses.
-
+lists of residential and postal addresses.
 
 
 HOW TO INSTALL
