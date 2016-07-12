@@ -1,0 +1,29 @@
+suburban : 12                                         STREET                                                        TOONGABBIE           NSW             2146                                                    
+suburban :            74                              ST                                                            TOONGABBIE           NSW             2146                                                    
+suburban :            22                              ST                                                            TOONGABBIE           NSW             2146                                                    
+suburban : 12         74                              RD                                                            TOONGABBIE           NSW             2146                                                    
+suburban : 74                                         AVENUE                                                        SOUTH WEST ROCKS     NSW             2146                                                    
+suburban : 74                                         ST                                                            TOONGABBIE           NSW             2146                                                    
+suburban :            74                              ROAD                                                          TOONGABBIE           NSW             2146                                                    
+suburban :            74                              PARK                                                          TOONGABBIE           NSW             2146                                                    
+suburban :            147                             ROAD                                                          KOTARA HEIGHTS       NEW SOUTH WALES 2289       AUSTRALIA                                    
+suburban :            22A                             ROAD                                                          CARDIFF              VIC             3285       AUSTRALIA                                    
+rural    :                                                          "OLD REGRET"                                    WENTWORTH FALLS      NT              882                                                     
+suburban : 2          3-5                             WAY                                                           ST VERMONT           VIC             3133                                                    
+suburban : 2          12                                                                                            WERRIBEE HILLS       VICTORIA        3030                                                    
+suburban :            60                              ROAD                                                          MT BAW BAW           VIC             3871                                                    
+suburban : 1          61                                                                                            PARADE CORLETTE      NSW             2315                                                    
+suburban : 4          26                              STREET                                                        FRENCH'S FOREST      NSW             2286                                                    
+road_box :                                                                                          RMS 75          MOUNT VICTORIA       NSW             2761                                                    
+road_box :                                            HIGHWAY                                       RMB 75          MOUNT VICTORIA       NSW             2761                                                    
+road_box :                                                                                          RMB 75          MOUNT VICTORIA       NSW             2761                                                    
+post_box :                                                                          PO BOX 71B                      VICTORIA VALLEY      VICTORIA        3146                                                    
+suburban : 2C                                                                                                       CARDIFF              NSW             2285                                                    
+suburban :            12                              ST                                                            ULTIMO               NSW             2007                      : ALL POSTAL DELIVERIES       
+suburban : 1234                                       ST                                                            MINNEAPOLIS          NSW             5407                                                    
+suburban :            6505                            ROAD                                                          WOODBURY             NSW             5525                                                    
+suburban :            3363                            RD                                                            EAGAN                NSW             5521                                                    
+
+
+TIME : Wed Apr 22 10:47:26 2015 
+BATCH DATA QUALITY: 89.29 percent
