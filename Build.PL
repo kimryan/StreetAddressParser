@@ -4,7 +4,7 @@ Module::Build -> new
 (
  module_name    => 'Lingua::EN::AddressParse',
  license        => 'perl',
- dist_abstract  => "extract components of a street address, presented as a text string",
+ dist_abstract  => "extract components of a street address from free format text",
  dist_author    => 'Kim Ryan <kimryan at cpan org>',
  build_requires =>
  {

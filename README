@@ -1,6 +1,6 @@
 NAME
 
-Lingua::EN::AddressParse - extract components of a street address, presented as a text string
+Lingua::EN::AddressParse - extract components of a street address from free format text
 
 SYNOPSIS
 
@@ -107,11 +107,12 @@ AddressParse was written by Kim Ryan <<kimryan at cpan d o t org>
 
 COPYRIGHT AND LICENSE
 
-Copyright (c) 2015 Kim Ryan. All rights reserved.
+Copyright (c) 2016 Kim Ryan. All rights reserved.
 
-This library is free software; you can redistribute it and/or modify
-it under the same terms as Perl itself, either Perl version 5.8.4 or,
-at your option, any later version of Perl 5 you may have available.
+This program is free software; you can redistribute it
+and/or modify it under the terms of the Perl Artistic License
+(see http://www.perl.com/perl/misc/Artistic.html).
+
 
 
 

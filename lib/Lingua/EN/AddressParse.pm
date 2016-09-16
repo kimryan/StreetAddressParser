@@ -1,6 +1,6 @@
 =head1 NAME
 
-Lingua::EN::AddressParse - extract components of a street address, presented as a text string
+Lingua::EN::AddressParse - extract components of a street address from free format text
 
 =head1 SYNOPSIS
 
@@ -12,7 +12,7 @@ Lingua::EN::AddressParse - extract components of a street address, presented as 
       auto_clean  => 1,
       force_case  => 1,
       abbreviate_subcountry => 0,
-      abbreviated_subcountry_only => 1,
+      abbreviated_subcountry_only => 0,
       force_post_code => 0
     );
 
@@ -38,7 +38,7 @@ Lingua::EN::AddressParse - extract components of a street address, presented as 
         street_type             'Ave'
         sub_property_identifier '3B'
         sub_property_type       'Apt'
-        subcountry              'WA'
+        subcountry              'WASHINGTON'
         suburb                  'Washington Valley'       
 
     %address_components = $address->components;
@@ -65,7 +65,7 @@ text such as,
     9 Church Street, Abertillery, Mid Glamorgan NP13 1DA
     27 Bury Street, Abingdon, Oxfordshire OX14 3QT
 
-    2A LOW ST KEW NSW 2123
+    2A O'CONNELL ST KEW NSW 2123
     12/3-5 AUBREY ST MOUNT VICTORIA VICTORIA 3133
     "OLD REGRET" WENTWORTH FALLS NSW 2782 AUSTRALIA
     GPO Box K318, HAYMARKET, NSW 2000
@@ -74,8 +74,8 @@ text such as,
 and attempts to parse it. If successful, the address is broken
 down into it's components and useful functions can be performed such as :
 
-    converting upper or lower case values to title case (2A Low St Kew NSW 2123)
-    extracting the addresses individual components      (2A,Low,St,KEW,NSW,2123)
+    converting upper or lower case values to title case (2A O'Connell St Kew NSW 2123)
+    extracting the addresses individual components      (2A,O'Connell,St,KEW,NSW,2123)
     determining the type of format the address is in    ('suburban')
 
 
@@ -86,6 +86,13 @@ that failed.
 This module can be used for analysing and improving the quality of
 lists of residential and postal addresses.
 
+By using a large combination of regular expressiosn with look ahead analysis, patterns
+can be parsed that confuse many other parsers. Examples are
+
+Street names with several street types: Lane Cove Road
+Suburbs which include street types: Smith Road St Marys
+Suburbs that include state names: Fort Washington Washington
+
 =head1 DEFINITIONS
 
 The following terms are used by AddressParse to define the components that
@@ -93,12 +100,12 @@ can make up an address.
 
     Pre cursor : C/O MR A Smith...
     Sub property identifier : Level 1A Unit 2, Apartment B, Lot 12, Suite # 12 ...
-    Property Identifier : 12/66A, 24-34, 2A, 23B/12C, 12/42-44
+    Property Identifier : 12/66A, 24-34, 2A, 23B/12C, 12/42-44, 2.5
     Property name   : "Old Regret"
     Post Box        : GP0 Box K123, LPO 2345, RMS 23 ...
     Road Box        : RMB 24A, RMS 234 ...
     Street Direction: North, SE, Sth. etc
-    Street name     : O'Hare, New South Head, The Causeway
+    Street name     : O'Hare, New South Head, The Causeway, Broadway
     Street type     : Road, Rd., St, Lane, Highway, Crescent, Circuit ...
     Suburb          : Dee Why, St. John's Wood ...
     Sub country     : NSW, New South Wales, ACT, NY, New Jersey AZ ...
@@ -118,6 +125,14 @@ The main  address formats  currently supported are as follows. (a ? means the co
     'post_box' : post_box suburb subcountry post_code(?) country(?)
     'road_box' : road_box street street_type suburb subcountry post_code(?) country(?)
     'road_box' : road_box suburb subcountry post_code(?) country(?)
+    
+Note that suburb and subcountry are not optional. The accuracy of the parser is
+improved by providing as much context as possible. Proding a suburb can ehlp to
+identify street names that would itherwise be ambigious.
+
+For the case where you only have a street address, dummy (but still valid) values can be used
+for suburb (such as 'Somewhere') and sub country (such as 'NY'). These dummy values will
+be parsed  but can be ignored.
 
 All formats may contain a precursor
 
@@ -139,7 +154,7 @@ optional argument to the C<new> method.
 
     my %args =
     (
-      country     => 'Australia',
+      country     => 'US',
       auto_clean  => 1,
       force_case  => 1,
       abbreviate_subcountry => 1,
@@ -334,7 +349,7 @@ Create a formatted text report
 
 Returns a string containing a multi line formatted text report
 
-=head1 DEPENDANCIES
+=head1 DEPENDENCIES
 
 L<Lingua::EN::NameParse>, L<Locale::SubCountry>, L<Parse::RecDescent>
 
@@ -344,6 +359,11 @@ L<Lingua::EN::NameParse>, L<Locale::SubCountry>, L<Parse::RecDescent>
 
 Streets such as 'The Esplanade' will return a street of 'The Esplanade' and a
 street type of null string.
+
+The abbreviation 'St' can be interpreted as either street or Saint. This leads to
+ambiguities such as '12 East St Thomas Lane'. This could be 'East Street', suburb of
+'Thomas Lane' or 'East St Thomas Lane'. And the first pattern is the more common,
+that is what will match.
 
 For US addresses, an ambiguity arises between a street directional suffix and
 a suburb directional prefix, such as '12 Main St S Springfield CA 92345'. Is it South
@@ -432,7 +452,7 @@ use Lingua::EN::AddressParse::Grammar;
 use Lingua::EN::NameParse;
 use Parse::RecDescent;
 
-our $VERSION = '1.25';
+our $VERSION = '1.26';
 
 #------------------------------------------------------------------------------
 # Create a new instance of an address parsing object. This step is time
@@ -1032,7 +1052,7 @@ sub _clean
     # Remove annotations enclosed in brackets, such as 1 Smith St (Cnr Brown St)
     $input =~ s|\(.*\)||;
    
-   # Normalise half house numbers, sucvh as 12.5 to 12 1/2. This is needed now before full stops are stripped out         
+   # Normalise half house numbers, such as 12.5 to 12 1/2. This is needed now before full stops are stripped out         
     $input =~ s|^(\d{1,4})\.5 |$1 1/2 |;        
 
     # strip full stops, remove illegal characters
@@ -1053,9 +1073,11 @@ sub _clean
     $input =~ s/LAKE ST (GEORGE|CLAIR)/LAKE SAINT $1/; # otherwise St gets consumed to early as 'Street'
     $input =~ s| CSEWY | CAUSEWAY |;
 
-    # street types
+    # Standardise abbreviations
 
-
+    $input =~ s|STR |ST |;
+    $input =~ s|TERR |TERRACE |;
+    
     $input =~ s|^FCTR?Y |FACTORY |;
     $input =~ s|^FACT?R?Y? |FACTORY |;
 
@@ -1086,20 +1108,24 @@ sub _clean
         }
     }
 
-    # Add or remove spaces in sub property identifiers
+    # Normalise sub property identifiers
     if ( $address->{country_code} eq 'US' )
     {
         # Fix US sub property identifiers that appear after street name and type
-        # add space between # and the number so #2 becomes '# 2'
+        # add space between # or 'Apt' and the number so #2 becomes '# 2'
         $input =~ s| #(\d)| # $1|;
         $input =~ s| #([A-Z])| # $1|;
         $input =~ s| (APT)(\d)| $1 $2|i;
+        
+        $input =~ s| (APT)-(\w)| $1 $2|i;
 
-        # remove redundnant space so # 34 B becomes # 34B
+        # remove redundant space so # 34 B becomes # 34B
         $input =~ s| # (\d+) (\w) | # $1$2 |;
 
-        # remove redundnant '#'
-         $input =~ s| APT #| APT |;
+        # remove redundant '#'
+        $input =~ s/ (APT|SUITE|UNIT) #/ $1 /;
+        # still to test
+       
     }
     else
     {
@@ -1108,14 +1134,13 @@ sub _clean
     }
 
     # Remove redundant slash or dash
-    # Unit 1B/22, becomes Unit 1B 22, Flat 2-12 becomes Flat 2 12
-    # TO DO, add |# at start
+    # Unit 1B/22, becomes Unit 1B 22, Flat 2-12 becomes Flat 2 12    
     $input =~ s/^([A-Z]{2,}) (\d+[A-Z]?)[\/-]/$1 $2 /;
     # Unit J1/ 39 becomes  Unit J1 39
     $input =~ s/^([A-Z]{2,}) ([A-Z]\d{0,3})[\/-]/$1 $2 /;
 
 
-    # remove dash that is not from a sequence, such as D-5 or 22-A
+    # remove dash that does not from a sequence, such as D-5 or 22-A
     $input =~ s|([A-Z])-(\d)|$1$2|;
     $input =~ s|(\d)-([A-Z])|$1$2|;
     
@@ -1158,6 +1183,7 @@ sub _extract_level
     if    
     (
         # Level info could be at start of string so first space is optional
+        $input =~ / ?((FIRST|SECONND|THIRD|FOURTH|FIFTH|SIXTH) (FLOOR|FLR|FL) )/ or      
         $input =~ / ?(\d{1,2}(ST|ND|RD|TH) (FLOOR|FLR|FL) )/ or       
         $input =~ / ?(LEVEL (\d{1,2}|[GM])[\/ -])/ or
         $input =~ / ?((FLOOR|FLR|FL) \d{1,2}[\/ -])/
@@ -1183,12 +1209,11 @@ sub _extract_building
     my ($building);
     
     my $bld = qr{BLOCK|BLDG?|BUILDING|TOWER};
+    my $id = qr{[A-Z]|A[A-Z]|\d+|\d{1,3}[A-Z]|[A-Z]\d{1,3}}; #  AA or 12  or 32C or C12
     
     if    
     (
-        $input =~ / ?(($bld) ([A-Z]{1,2}|\d+) )/ or  # BLD 12 or AA
-        $input =~ / ?(($bld) \d{1,3}[A-Z] )/ or      # BLD 32C
-        $input =~ / ?(($bld) [A-Z]\d{1,3} )/         # BLD C12       
+        $input =~ / ($bld $id) / or  $input =~ /^($bld $id) /
      )
     {
         $building = $1;
@@ -1196,6 +1221,7 @@ sub _extract_building
         $building =~ s|-||;
         $input =~ s/$building//;
     }
+    # TO DO, North, East etc Building?
  
     return($building,$input);
 }
@@ -1256,8 +1282,8 @@ sub _check_vowel
     my @words = split(/ /,$str);
     foreach my $word (@words)
     {
-        #  Saint, Mount, Junior, Senior (as in Martin Luther KIng Snr)
-        if ( length($word) > 1 and $word !~ /[AEIOUY]|ST|MT|JN?R|SN?R/ )  
+        #  Saint, Mount, Junior, Senior (as in Dr Martin Luther King Snr)
+        if ( length($word) > 1 and $word !~ /[AEIOUY]|ST|MT|DR|JN?R|SN?R/ )  
         {
             return(1);
         }

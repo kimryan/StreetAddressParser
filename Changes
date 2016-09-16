@@ -1,5 +1,12 @@
 Revision history for Perl CPAN module Lingua::EN::AddressParse
 
+1.26 15 Sep 2016
+    the auto_clean option now standardises more street types, sub property types and identifiers
+    added more street names, types and sub property identifier patterns
+    Directional streets (like East St) given higher matching priority
+    Fixed bug in synopsis example
+    Improved documentation
+
 
 1.25 12 Jul 2016
     Used github as repository

@@ -22,7 +22,7 @@ Lingua::EN::AddressParse::Grammar was written by Kim Ryan, kimryan at cpan d-o-t
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (c) 2015 Kim Ryan. All rights reserved.
+Copyright (c) 2016 Kim Ryan. All rights reserved.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
@@ -35,7 +35,7 @@ use strict;
 use warnings;
 use Locale::SubCountry;
 
-our $VERSION = '1.25';
+our $VERSION = '1.26';
 
 #-------------------------------------------------------------------------------
 # Rules that define valid orderings of an addresses components
@@ -317,11 +317,14 @@ q{
         )\ /x
 
     unit_number:
-        /\d{1,6} /           |
-        /\d{1,4}[A-Z]{0,2} / | # such as 23B, 6AW
-        /\d{1,2}[A-Z]\d /    | # such as 4A5
-        /[A-Z]{1,2}\d{0,4} / | # such as # D512
-        /\d{1,3}-\d{1,3}/      # such as # 200-204
+        /(
+        \d{1,6}           |
+        \d{1,4}[A-Z]{0,2} | # such as 23B, 6AW
+        \d{1,2}[A-Z]\d    | # such as 4A5
+        [A-Z]\d[A-Z]      | # such as A5J
+        [A-Z]{1,2}\d{0,4} | # such as # D512
+        \d{1,3}-\d{1,3}     # such as # 200-204
+        )\ /x    
 };
 
 #------------------------------------------------------------------------------
@@ -354,12 +357,14 @@ q{
 
     # NOTE: extended regexps not useful here, too many spaces to delimit
     post_box_type :
-        /GPO BOX /  |
-        /LPO BOX /  |
-        /P ?O BOX / |
-        /PO BOX /   |
-        /LOCKED BAG /   |
-        /PRIVATE BAG /
+        /(
+        GPO\ BOX  |
+        LPO\ BOX  |
+        P\ ?O\ BOX |
+        PO\ BOX   |
+        LOCKED\ BAG |
+        PRIVATE\ BAG
+        )\ /x  
 
     post_box_number : /[A-Z]?\d{1,6}[A-Z]? /
 };
@@ -399,17 +404,19 @@ q{
         street_name_single_word |
         street_noun |
         french_style |
-        /AVENUE OF \w+ \w+ /   # The Americas, Two Rivers etc       
+        /AVENUE OF \w+ \w+ /   # The Americas, Two Rivers etc
         
     major_road :
-        /([N|E|S|W] )?(COUNTY |STATE |US |FIRE )?(ALT|HIGHWAY|LANE|HWY|ROAD|RD|ROUTE) \d{1,3}\w? ([N|E|S|W|NORTH|EAST|SOUTH|WEST] )?/
+        /([N|E|S|W] )?(COUNTY |STATE |US |FIRE )?(ALT|HIGHWAY|LANE|HWY|ROAD|RD|RTE|ROUTE) \d{1,3}\w? ([N|E|S|W|NORTH|EAST|SOUTH|WEST] )?/
 
     # Avenue C, 12 1/2 etc
     avenue_ordinal :
         /([N|E|S|W] )?AVENUE ([A-Z]|\d{1,2}( 1\/2)?) /
+        
+    # TO DO: N,E,S,W END suburb. End is valid street type but always with direction
 
     street_name_single_word:
-        /([N|E|S|W] )?BROADWAY|BOARDWALK|BOULEVARD|BOWERY|ESPLANADE|KINGSWAY|QUEENSWAY|GREENWAY|PARKWAY|RIVERBANK /
+        /([N|E|S|W] )?(ALDERSGATE|BROADWAY|BOARDWALK|BOULEVARD|BOWERY|ESPLANADE|KINGSWAY|QUEENSWAY|GREENWAY|PARKWAY|PONDWAY|RIVERBANK) /
         ...!street_type
         {
             $return = $item[1]
@@ -425,48 +432,54 @@ q{
         /RUE (DE |DES )?/ any_word
         {
             $return = "$item[1]$item[2]"
+        }
+             
+
+    #---------------------------------------------------------------------------- 
+
+    street:
+                         
+        street_prefix(?) street_name
+        {
+            if ( $item[1][0] )
+            {
+                $return = "$item[1][0]$item[2]"
+            }            
+            else
+            {
+                $return = $item[2];
+            }
+        }
+        |
+        # Like South Parade, West Street, Lower Rd.
+        # Note: we don't included abbreviated direction here
+        # Note: precedence is important here, this form is less common than above
+        
+        full_direction | general_prefix ...street_type
+        {
+            $return = $item[1];
         }        
+           
 
-    #----------------------------------------------------------------------------
-
-    # Street name is optional for cases where street name IS in the street_prefix,
-    # like South Parade
-
-    street: prefix(?) street_name(?)
-    {
-        if ( $item[1][0] and $item[2][0] )
-        {
-            $return = "$item[1][0]$item[2][0]"
-        }
-        elsif ( $item[2][0] )
-        {
-           $return = $item[2][0]
-        }
-        elsif ( $item[1][0] )
-        {
-            $return = $item[1][0]
-        }
-    }
-
-
-    prefix :
-        direction |
+    street_prefix : direction | general_prefix
+    
+    general_prefix:
         /(
         NEW|
         OLD|
-        MT|
-        MOUNT|
+        MT|MOUNT|
         DAME|
         SIR|
         UPPER|
         LOWER|
         LA|
         ST
-        )\ /x
+        )\ /x 
 
     street_name :
 
-        /(N |E |S |W |DR )?(MARTIN LUTHER|MARTIN L|ML) KING ([JS]R )?/
+        /(N |E |S |W |DR )?(MARTIN LUTHER|MARTIN L|ML) KING ([JS]R )?/ |
+        /MALCOLM X /
         |
         street_name_ordinal
         |
@@ -483,20 +496,26 @@ q{
         CIRCLE|
         CENTRAL|
         CLUB|
+        COURT|
         CREST|
         CRESCENT|
         CROSS|
         CROSSING|
         COVE|
+        EDGE|
         GARDEN|
+        GATE|
+        GREEN|
         GLEN|
         GROVE|
         HAVEN|
+        HEATH|
         HILL|
         HOLLOW|
         ISLAND|
         ISLE|
         KEY|
+        KNOLL|
         LANDING|
         LANE|
         LOOP|
@@ -506,6 +525,7 @@ q{
         PARKWAY|
         PLACE|
         PLAZA|
+        PLEASANT|
         POINT|
         POINTE|
         RUN|
@@ -527,8 +547,10 @@ q{
         /(
         CIRCLE|
         CLUB|
+        COURT|
         CRESCENT|
         CROSS|
+        GATE|
         GLADE|
         GLEN|
         GREENS?|
@@ -536,14 +558,20 @@ q{
         FAIRWAY|
         HOLLOW|
         HILL|
+        ISLAND|
         KEY|
+        KNOLL|
         LA|
+        LANDING|
         LANE|
         LT|
         PARK|
         PLAZA|
+        POINT|
         RIDGE|
-        ST
+        ST|
+        TRAIL|
+        VILLAGE
         )\ /x
         street_name_word ...street_type
         {
@@ -563,10 +591,10 @@ q{
             $return = $item[1]
         }
         |
-        # such as John F Kennedy Boulevard
-        any_word street_name_letter street_name_word
+        # Persons name, such as John F Kennedy Boulevard
+        title(?) any_word street_name_letter street_name_word
         {
-            $return = "$item[1]$item[2]$item[3]"
+            $return = "$item[1][0]$item[2]$item[3]$item[4]"
         }
         |
         street_name_words
@@ -637,7 +665,6 @@ q{
         RD|ROAD|
         LA|LN|LANE|
         AVE?|AVENUE|
-
         ALY?|ALLEY|
         ARC|ARCADE|
         BATTLEMENT|
@@ -672,22 +699,25 @@ q{
         EXP|EXPW?Y|EXPRESSWAY|
         FAIRWAY|
         FW?Y|FREEWAY|
+        GATE|
         GLADE|
         GRANGE|
         GLN|GLEN|
         GREENS?|GRN|
         GR|GROVE|
         HAVEN|
+        HEATH|
         HL|HILL|
         HWA?Y|HIGHWAY|
         HOLLOW|
-        ISLE?|IS|ISLAND|
+        ISLE?|IS|  # Note that Island is a valid street type, but can get confused with suburb name, such as: Main St Clare Island. So don't include it
         KEY|
         KNOLL|
         LANTERNS|
         LANDING|
         LOOP|
         MEWS|
+        MINNOW|
         OVERFLOW|
         OVERLOOK|
         OVAL|
@@ -715,12 +745,11 @@ q{
         ROW|
         SLIP|
         SQ|SQUARE|
-        TCE|TER|TRCE|TERRACE|
+        TCE|TRCE|TER|TERRACE|
         TRL|TRAIL|
         TPKE|TURNPIKE|
         TURN|
-        THROUGHWAY|
-        VLG|VILLAGE|
+        THROUGHWAY|       
         WL?K|WALK|
         WY|WAY|WYNDE|
         WAYS  # such as in 'The Five Ways'
@@ -736,10 +765,10 @@ q
 {
     suburb_prefix :
 
-        prefix  |
+        street_prefix  |
         /CAPE / |
-        /LAKE / |
-        /MOUNT|MT /
+        /FORT|FT /   
+        /LAKE / 
 
     suburb: 
         any_word /BY THE SEA /
@@ -823,6 +852,12 @@ q
         SW |
         W
         )\ /x
+        
+ title:
+        /(
+        REV |
+        DR 
+        )\ /x        
 };
 
 #------------------------------------------------------------------------------
