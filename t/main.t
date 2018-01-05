@@ -5,7 +5,7 @@
 
 use strict;
 use Lingua::EN::AddressParse;
-use Test::Simple tests => 15;
+use Test::Simple tests => 16;
 
 
 
@@ -151,7 +151,25 @@ ok
         $comps{subcountry} eq 'CA' and
         $comps{post_code} eq '90210-1234'
     ),
-    "US suburban address"
+    "US suburban address 1"
+);
+
+$input = "12 SOUTH OLD AMINTA CRESCENT BEVERLEY HILLS CA 90210-1234";
+$address->parse($input);
+%comps = $address->components;
+ok
+(
+    (
+        $comps{property_identifier} eq '12' and
+        $comps{street_name} eq 'South Old Aminta' and
+        $comps{base_street_name} eq 'Old Aminta' and
+        $comps{street_type} eq 'Crescent' and
+        $comps{street_direction_prefix} eq 'South' and
+        $comps{suburb} eq 'Beverley Hills' and
+        $comps{subcountry} eq 'CA' and
+        $comps{post_code} eq '90210-1234'
+    ),
+    "US suburban address 2"
 );
 
 $input = "12 US HIGHWAY 19 N BEVERLEY HILLS CA 90210-1234";
