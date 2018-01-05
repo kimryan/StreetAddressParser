@@ -86,7 +86,7 @@ that failed.
 This module can be used for analysing and improving the quality of
 lists of residential and postal addresses.
 
-By using a large combination of regular expressiosn with look ahead analysis, patterns
+By using a large combination of regular expression with look ahead analysis, patterns
 can be parsed that confuse many other parsers. Examples are
 
 Street names with several street types: Lane Cove Road
@@ -127,8 +127,8 @@ The main  address formats  currently supported are as follows. (a ? means the co
     'road_box' : road_box suburb subcountry post_code(?) country(?)
     
 Note that suburb and subcountry are not optional. The accuracy of the parser is
-improved by providing as much context as possible. Proding a suburb can ehlp to
-identify street names that would itherwise be ambigious.
+improved by providing as much context as possible. Proding a suburb can help to
+identify street names that would otherwise be ambigious.
 
 For the case where you only have a street address, dummy (but still valid) values can be used
 for suburb (such as 'Somewhere') and sub country (such as 'NY'). These dummy values will
